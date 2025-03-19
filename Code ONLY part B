@@ -1,0 +1,514 @@
+#Part B: 
+# Class 1
+class Room:
+    # Constructor
+    def __init__(self, room_number, room_type, amenities=None, price_per_night=0.0):
+        # Private attributes
+        self._room_number = room_number
+        self._type = room_type
+        self._amenities = amenities if amenities else []
+        self._price_per_night = price_per_night
+        self._available = True
+        
+#This class does not directly reference other classes in its attributes        
+#It is referenced by the Booking class (composition relationship - a booking contains a room)
+     
+    
+    # Getter and setter methods
+    def get_room_number(self):
+        return self._room_number
+    
+    def get_type(self):
+        return self._type
+    
+    def set_type(self, room_type):
+        self._type = room_type
+    
+    def get_amenities(self):
+        return self._amenities
+    
+    def set_amenities(self, amenities):
+        self._amenities = amenities
+    
+    def get_price_per_night(self):
+        return self._price_per_night
+    
+    def set_price_per_night(self, price):
+        self._price_per_night = price
+    
+    def is_available(self):
+        return self._available
+    
+    def set_available(self, status):
+        self._available = status
+    
+    # Methods
+    def update_availability(self):
+        # Update room availability based on current bookings
+        # This would typically check the booking database
+        pass
+    
+    def get_details(self):
+        # Return a string representation of room details
+        amenities_str = ", ".join(self._amenities)
+        return f"Room {self._room_number} ({self._type}): ${self._price_per_night:.2f}/night, Amenities: {amenities_str}"
+    
+    # String representation
+    def __str__(self):
+        status = "Available" if self._available else "Booked"
+        return f"Room {self._room_number} - Type: {self._type} - Price: ${self._price_per_night:.2f}/night - Status: {status}"
+        
+#Class 2:
+class Guest:
+    # Constructor
+    def __init__(self, guest_id, name, contact_info, loyalty_points=0):
+        # Private attributes
+        self._guest_id = guest_id
+        self._name = name
+        self._contact_info = contact_info
+        #The _loyalty_points attribute indicates an aggregation relationship with LoyaltyProgram
+        self._loyalty_points = loyalty_points 
+        #The Guest "has" loyalty points, but doesn't "own" or create the LoyaltyProgram itself
+        #If the LoyaltyProgram were to be deleted, the Guest could still exist independently
+        #The loyalty points are a "part" of the Guest that can be separated without destroying the Guest
+
+        
+#This class is referenced by the Booking class (association - a booking is made by a guest)
+#This class is referenced by the ServiceRequest class (association - a guest makes service requests)
+#This class is referenced by the Feedback class (aggregation - a guest provides feedback)
+    
+    # Getter and setter methods
+    def get_guest_id(self):
+        return self._guest_id
+    
+    def get_name(self):
+        return self._name
+    
+    def set_name(self, name):
+        self._name = name
+    
+    def get_contact_info(self):
+        return self._contact_info
+    
+    def set_contact_info(self, contact_info):
+        self._contact_info = contact_info
+    
+    def get_loyalty_points(self):
+        return self._loyalty_points
+    
+    def set_loyalty_points(self, points):
+        self._loyalty_points = points
+    
+    # Methods
+    def update_profile(self, name=None, contact_info=None):
+        # Update guest profile information
+        if name:
+            self._name = name
+        if contact_info:
+            self._contact_info = contact_info
+        return "Profile updated successfully"
+    
+    def view_reservation_history(self):
+        # In a real system, this would fetch booking history from a database
+        # For simplicity, we return a placeholder message
+        return f"Reservation history for {self._name}"
+    
+    def redeem_points(self, points_to_redeem):
+        # Redeem loyalty points for rewards
+        if points_to_redeem <= self._loyalty_points:
+            self._loyalty_points -= points_to_redeem
+            return f"Redeemed {points_to_redeem} points. Remaining points: {self._loyalty_points}"
+        else:
+            return f"Insufficient points. Current balance: {self._loyalty_points}"
+    
+    # String representation
+    def __str__(self):
+        return f"Guest ID: {self._guest_id} - Name: {self._name} - Contact: {self._contact_info} - Loyalty Points: {self._loyalty_points}"
+        
+
+#Class 3: 
+from datetime import datetime
+
+class Booking:
+    # Constructor
+    def __init__(self, booking_id, guest, room, check_in_date, check_out_date):
+        # Private attributes
+        self._booking_id = booking_id
+        self._guest = guest # Association with Guest (1 to many)
+        self._room = room # Composition with Room (1 to many)
+        self._check_in_date = check_in_date
+        self._check_out_date = check_out_date
+        self._status = "Confirmed"  # Default status
+        
+#In here if the Guest object is deleted or modified, the Booking object continues to exist
+#The Booking simply holds a reference to the Guest
+#If you try to access booking._guest after the Guest object is garbage collected, you might get a reference to 
+#a non-existent object
+ 
+        
+    
+    # Getter and setter methods
+    def get_booking_id(self):
+        return self._booking_id
+    
+    def get_guest(self):
+        return self._guest
+    
+    def get_room(self):
+        return self._room
+    
+    def get_check_in_date(self):
+        return self._check_in_date
+    
+    def set_check_in_date(self, date):
+        self._check_in_date = date
+    
+    def get_check_out_date(self):
+        return self._check_out_date
+    
+    def set_check_out_date(self, date):
+        self._check_out_date = date
+    
+    def get_status(self):
+        return self._status
+    
+    def set_status(self, status):
+        self._status = status
+    
+    # Methods
+    def calculate_total_price(self):
+        # Calculate number of days
+        delta = self._check_out_date - self._check_in_date
+        num_days = delta.days
+        
+        # Calculate total price
+        total_price = num_days * self._room.get_price_per_night()
+        return total_price
+    
+    def confirm_booking(self):
+        # Confirm the booking and update room availability
+        self._status = "Confirmed"
+        self._room.set_available(False)
+        return f"Booking {self._booking_id} confirmed for {self._guest.get_name()}"
+    
+    def cancel_booking(self):
+        # Cancel the booking and update room availability
+        self._status = "Cancelled"
+        self._room.set_available(True)
+        return f"Booking {self._booking_id} cancelled for {self._guest.get_name()}"
+    
+    # String representation
+    def __str__(self):
+        return (f"Booking ID: {self._booking_id} - Guest: {self._guest.get_name()} - "
+                f"Room: {self._room.get_room_number()} - Check-in: {self._check_in_date.strftime('%Y-%m-%d')} - "
+                f"Check-out: {self._check_out_date.strftime('%Y-%m-%d')} - Status: {self._status}")
+
+#Class 4: 
+from datetime import datetime
+
+class Payment:
+    # Constructor
+    def __init__(self, payment_id, booking, amount, payment_method):
+        # Private attributes
+        self._payment_id = payment_id
+        self._booking = booking # Composition with Booking
+        self._amount = amount
+        self._payment_date = datetime.now()
+        self._payment_method = payment_method
+        
+# In python, when the containing object is deleted, the contained object should also be deleted
+#The contained object cannot exist without its container
+# Python doesn't enforce this automatically through garbage collection
+# Typically implemented by creating the contained object inside the container's constructor
+    
+    # Getter and setter methods
+    def get_payment_id(self):
+        return self._payment_id
+    
+    def get_booking(self):
+        return self._booking
+    
+    def get_amount(self):
+        return self._amount
+    
+    def set_amount(self, amount):
+        self._amount = amount
+    
+    def get_payment_date(self):
+        return self._payment_date
+    
+    def get_payment_method(self):
+        return self._payment_method
+    
+    def set_payment_method(self, method):
+        self._payment_method = method
+    
+    # Methods
+    def process_payment(self):
+        # Process the payment
+        # In a real system, this would connect to a payment gateway
+        return True
+    
+    def generate_receipt(self):
+        # Generate a receipt for the payment
+        receipt = (f"Receipt for Payment #{self._payment_id}\n"
+                  f"Date: {self._payment_date.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                  f"Amount: ${self._amount:.2f}\n"
+                  f"Method: {self._payment_method}\n"
+                  f"Booking ID: {self._booking.get_booking_id()}\n"
+                  f"Guest: {self._booking.get_guest().get_name()}")
+        return receipt
+    
+    def refund_payment(self):
+        # Process a refund
+        # In a real system, this would connect to a payment gateway
+        return True
+    
+    # String representation
+    def __str__(self):
+        return (f"Payment ID: {self._payment_id} - Amount: ${self._amount:.2f} - "
+                f"Date: {self._payment_date.strftime('%Y-%m-%d')} - Method: {self._payment_method}")
+
+
+#Class 5: 
+class LoyaltyProgram:
+    # Constructor
+    def __init__(self, program_id, program_name, points_per_dollar, rewards=None):
+        # Private attributes
+        self._program_id = program_id
+        self._program_name = program_name
+        self._points_per_dollar = points_per_dollar
+        self._rewards = rewards if rewards else []
+    
+    # Getter and setter methods
+    def get_program_id(self):
+        return self._program_id
+    
+    def get_program_name(self):
+        return self._program_name
+    
+    def set_program_name(self, name):
+        self._program_name = name
+    
+    def get_points_per_dollar(self):
+        return self._points_per_dollar
+    
+    def set_points_per_dollar(self, points):
+        self._points_per_dollar = points
+    
+    def get_rewards(self):
+        return self._rewards
+    
+    def add_reward(self, reward):
+        self._rewards.append(reward)
+    
+    # Methods
+    def earn_points(self, amount):
+        # Calculate points earned based on amount spent
+        points_earned = int(amount * self._points_per_dollar)
+        return points_earned
+    
+    def redeem_reward(self, points, reward_name):
+        # Find the reward with the given name
+        for reward in self._rewards:
+            if reward.get("name") == reward_name:
+                if points >= reward.get("points"):
+                    return reward.get("reward")
+                else:
+                    return "Insufficient points for this reward"
+        return "Reward not found"
+    
+    def get_available_rewards(self, points):
+        # Return a list of rewards that can be redeemed with the given points
+        available_rewards = []
+        for reward in self._rewards:
+            if points >= reward.get("points"):
+                available_rewards.append(reward)
+        return available_rewards
+    
+    # String representation
+    def __str__(self):
+        return (f"Loyalty Program: {self._program_name} (ID: {self._program_id}) - "
+                f"Points per dollar: {self._points_per_dollar} - Rewards: {len(self._rewards)}")
+                
+
+#Class 6: 
+from datetime import datetime
+
+class ServiceRequest:
+    # Constructor
+    def __init__(self, request_id, guest, request_type, status="Pending"):
+        # Private attributes
+        self._request_id = request_id
+        self._guest = guest # Association with Guest
+        self._request_type = request_type
+        self._request_date = datetime.now()
+        self._status = status
+        
+#The relationship is "uses" rather than "owns" or "is part of"
+#The relationship simply establishes that a guest is associated with a service request
+#If the Guest object were deleted, the ServiceRequest could still exist (lose access to guest information)
+    
+    # Getter and setter methods
+    def get_request_id(self):
+        return self._request_id
+    
+    def get_guest(self):
+        return self._guest
+    
+    def get_request_type(self):
+        return self._request_type
+    
+    def set_request_type(self, request_type):
+        self._request_type = request_type
+    
+    def get_request_date(self):
+        return self._request_date
+    
+    def get_status(self):
+        return self._status
+    
+    def set_status(self, status):
+        self._status = status
+    
+    # Methods
+    def submit_request(self):
+        # Submit a new service request
+        self._status = "Submitted"
+        return f"Request {self._request_id} submitted successfully"
+    
+    def update_status(self, status):
+        # Update the status of the request
+        self._status = status
+        return f"Request {self._request_id} status updated to {status}"
+    
+    def assign_to_staff(self, staff_id):
+        # Assign the request to a staff member
+        # In a real system, this would update a staff assignment field
+        return f"Request {self._request_id} assigned to staff member {staff_id}"
+    
+    # String representation
+    def __str__(self):
+        return (f"Service Request ID: {self._request_id} - Type: {self._request_type} - "
+                f"Guest: {self._guest.get_name()} - Status: {self._status} - "
+                f"Date: {self._request_date.strftime('%Y-%m-%d %H:%M')}")
+                
+
+#Class 7: 
+from datetime import datetime
+
+class Invoice:
+    # Constructor
+    def __init__(self, invoice_id, booking, total_amount):
+        # Private attributes
+        self._invoice_id = invoice_id
+        self._booking = booking
+        self._total_amount = total_amount
+        self._issue_date = datetime.now()
+    
+    # Getter and setter methods
+    def get_invoice_id(self):
+        return self._invoice_id
+    
+    def get_booking(self):
+        return self._booking
+    
+    def get_total_amount(self):
+        return self._total_amount
+    
+    def set_total_amount(self, amount):
+        self._total_amount = amount
+    
+    def get_issue_date(self):
+        return self._issue_date
+    
+    # Methods
+    def generate_invoice(self):
+        # This method demonstrates the composition relationship
+        # by directly accessing and using Booking's internal data
+        
+# Invoice cannot exist without a Booking - it's completely dependent on it, relies on and directly uses 
+#Booking's internal data and relationships
+#f the Booking were deleted, the Invoice would be meaningless and couldn't function
+
+
+        # Generate an invoice with details
+        guest = self._booking.get_guest()
+        room = self._booking.get_room()
+        
+        invoice_details = (
+            f"INVOICE #{self._invoice_id}\n"
+            f"Date: {self._issue_date.strftime('%Y-%m-%d')}\n"
+            f"Guest: {guest.get_name()}\n"
+            f"Room: {room.get_room_number()} ({room.get_type()})\n"
+            f"Check-in: {self._booking.get_check_in_date().strftime('%Y-%m-%d')}\n"
+            f"Check-out: {self._booking.get_check_out_date().strftime('%Y-%m-%d')}\n"
+            f"Total Amount: ${self._total_amount:.2f}\n"
+            f"Thank you for choosing Royal Stay Hotel!"
+        )
+        
+        return invoice_details
+    
+    def email_invoice(self):
+        # Send invoice via email
+        # In a real system, this would use an email service
+        guest = self._booking.get_guest()
+        return f"Invoice #{self._invoice_id} emailed to {guest.get_name()} successfully"
+    
+    # String representation
+    def __str__(self):
+        return (f"Invoice ID: {self._invoice_id} - Booking: {self._booking.get_booking_id()} - "
+                f"Amount: ${self._total_amount:.2f} - Date: {self._issue_date.strftime('%Y-%m-%d')}")
+                
+
+
+#Class 8:
+class Feedback:
+    # Constructor
+    def __init__(self, feedback_id, guest, booking, rating, comments=""):
+        # Private attributes
+        self._feedback_id = feedback_id
+        self._guest = guest # Aggregation with Guest
+        self._booking = booking
+        self._rating = rating
+        self._comments = comments
+
+#Similar to association at code level
+#The difference is conceptual - aggregation suggests the guest is "part of" the feedback collection
+#If the Guest object is deleted, the Feedback object still exists but loses access to guest information
+#Often implemented with collections like lists (e.g., self._guests = []) when the relationship is one-to-many
+    
+    # Getter and setter methods
+    def get_feedback_id(self):
+        return self._feedback_id
+    
+    def get_guest(self):
+        return self._guest
+    
+    def get_rating(self):
+        return self._rating
+    
+    def set_rating(self, rating):
+        self._rating = rating
+    
+    def get_comments(self):
+        return self._comments
+    
+    def set_comments(self, comments):
+        self._comments = comments
+    
+    # Methods
+    def submit_feedback(self):
+        # Submit the feedback
+        return f"Feedback {self._feedback_id} submitted successfully with rating {self._rating}/5"
+    
+    def view_feedback(self):
+        # Return a string representation of the feedback
+        return (f"Feedback from {self._guest.get_name()} - Rating: {self._rating}/5\n"
+                f"Comments: {self._comments}\n"
+                f"For booking: {self._booking.get_booking_id()}")
+    
+    # String representation
+    def __str__(self):
+        return (f"Feedback ID: {self._feedback_id} - Guest: {self._guest.get_name()} - "
+                f"Rating: {self._rating}/5 - Comments: {self._comments[:20]}...")
